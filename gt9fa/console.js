@@ -83,7 +83,7 @@ const CSS = `
 .opt{position:relative;display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;
   height:31px;margin:0 0 4px;padding:0 10px;border:1px solid var(--line);background:var(--panel);
   color:var(--ink);font:600 11px/1 Inter,sans-serif;letter-spacing:.07em;text-transform:uppercase;
-  cursor:pointer;transition:background .16s ease-out,border-color .16s ease-out,color .16s ease-out}
+  cursor:pointer;pointer-events:auto;transition:background .16s ease-out,border-color .16s ease-out,color .16s ease-out}
 .opt:last-child{margin-bottom:0}
 .opt .l{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .opt .s{font:500 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.02em;color:var(--faint);
@@ -99,7 +99,7 @@ const CSS = `
 
 .tog{display:flex;align-items:center;gap:9px;width:100%;height:28px;padding:0;border:0;background:none;
   color:var(--ink);font:600 11px/1 Inter,sans-serif;letter-spacing:.07em;text-transform:uppercase;
-  cursor:pointer;text-align:left}
+  cursor:pointer;pointer-events:auto;text-align:left}
 .tog .sw{position:relative;flex:0 0 28px;width:28px;height:15px;border:1px solid #c3c6cb;background:#e6e8ea;
   transition:background .16s ease-out,border-color .16s ease-out}
 .tog .sw::after{content:'';position:absolute;left:1px;top:1px;width:11px;height:11px;background:#fff;
@@ -112,7 +112,7 @@ const CSS = `
 .load-head .k{font:500 10.5px/1 Inter,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 .load-head .v{font:600 17px/1 'JetBrains Mono',monospace}
 .range{appearance:none;-webkit-appearance:none;display:block;width:100%;height:22px;margin:0;background:none;
-  cursor:ew-resize;--fill:100%}
+  cursor:ew-resize;pointer-events:auto;--fill:100%}
 .range::-webkit-slider-runnable-track{height:3px;background:linear-gradient(to right,var(--accent) var(--fill),#d3d5d9 var(--fill))}
 .range::-moz-range-track{height:3px;background:#d3d5d9}
 .range::-moz-range-progress{height:3px;background:var(--accent)}
@@ -156,7 +156,8 @@ const CSS = `
 @keyframes pr{0%{opacity:.9;transform:scale(.5)}100%{opacity:0;transform:scale(1.5)}}
 .chip{position:absolute;left:800px;top:74px;transform:translateX(-50%);display:flex;align-items:center;gap:7px;
   height:27px;padding:0 12px;border:1px solid var(--line);background:rgba(255,255,255,.94);color:var(--ink);
-  font-size:9.5px;font-weight:600;letter-spacing:.11em;text-transform:uppercase;white-space:nowrap;cursor:pointer;z-index:30}
+  font-size:9.5px;font-weight:600;letter-spacing:.11em;text-transform:uppercase;white-space:nowrap;cursor:pointer;
+  pointer-events:auto;z-index:30}
 .chip i{display:block;width:6px;height:6px;border-radius:50%;background:var(--accent)}
 .chip[aria-pressed="true"] i{animation:blink 1.2s steps(2) infinite}
 @keyframes blink{50%{opacity:.15}}

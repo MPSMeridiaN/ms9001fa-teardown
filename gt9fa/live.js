@@ -125,8 +125,16 @@ export function runLive() {
     const ctl = box('.p-ctl');
     const top = mode === 'port' && read ? read[1] : head ? head[1] : 60;
     const bottom = mode === 'port' ? (ctl ? ctl[0] : H * 0.72) : chart ? chart[0] : H - 40;
+    const edge = (sel, side) => {
+      const n = ui.root.querySelector(sel);
+      if (!n) return side === 'right' ? W - 14 : 14;
+      const r = n.getBoundingClientRect();
+      return side === 'right' ? (r.right - a.left) / s + 10 : (r.left - a.left) / s - 10;
+    };
+    const left = mode === 'port' ? 14 : edge('.p-read', 'right');
+    const right = mode === 'port' ? W - 14 : edge('.p-ctl', 'left');
     syBase = (top + bottom) / 2 - H / 2;
-    ui.setBounds(top, bottom);
+    ui.setBounds(top, bottom, left, right);
     if (mode === 'port' && read) ui.chip.style.top = `${read[1] + 8}px`;
   };
 

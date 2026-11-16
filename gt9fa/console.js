@@ -396,9 +396,9 @@ export function createConsole(app) {
     el[id] = root.querySelector('#' + id);
 
   // the machine's free rectangle, so callouts never land on a panel
-  let bounds = {top: 60, bottom: 660};
-  const setBounds = (top, bottom) => {
-    bounds = {top, bottom};
+  let bounds = {top: 60, bottom: 660, left: 14, right: 1140};
+  const setBounds = (top, bottom, left, right) => {
+    bounds = {top, bottom, left, right};
   };
 
   const setOn = (node, on) => {
@@ -588,7 +588,7 @@ export function createConsole(app) {
       const [ax, ay] = p;
       const side = c.side ?? 1;
       const bw = co.box.offsetWidth || 170;
-      const bx = Math.min(app.clientWidth - bw - 14, Math.max(14, ax + side * (bw * 0.55 + 44)));
+      const bx = Math.min(bounds.right - bw, Math.max(bounds.left, ax + side * (bw * 0.55 + 44)));
       const by = Math.min(bounds.bottom - 52, Math.max(bounds.top + 6, ay - 46));
       co.box.style.transform = `translate(${bx}px, ${by}px)`;
       co.line.setAttribute('points', `${ax},${ay} ${ax + side * 30},${ay - 22} ${bx},${by + 12}`);

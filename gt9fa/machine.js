@@ -172,7 +172,10 @@ export function buildMachine() {
   const lip = mesh(new THREE.TorusGeometry(1.1, 0.05, 10, 64), mat('inlet', 'casingD'), inlet);
   lip.rotation.y = Math.PI / 2;
   lip.position.x = -5.98;
-  row(inlet, mat('inlet', 'blade'), L.xIgv, 22, 0.5, 1.03, 0.24, 0.055, 0.35);
+  row(inlet, mat('inlet', 'blade'), L.xIgv, 22, 0.5, 1.03, 0.3, 0.06, 0.35);
+  // variable-IGV hardware: the unison ring that turns every vane at once
+  const igvRing = mesh(new THREE.TorusGeometry(1.235, 0.038, 8, 72), mat('inlet', 'casingD'), inlet, [-5.04, 0, 0]);
+  igvRing.rotation.y = Math.PI / 2;
   // inlet cone on the rotor nose
   const cone = mesh(new THREE.ConeGeometry(0.5, 0.62, 32), mat('shaft', 'rotor'), inlet);
   cone.rotation.z = Math.PI / 2;
@@ -224,6 +227,10 @@ export function buildMachine() {
     const n = Math.round(56 + 34 * (i / 17));
     row(compRows, mat('compStator', 'bladeS'), STAGE(i) + L.pitch * 0.5, n, HUB(i) + 0.005, TIP(i) + 0.03,
       0.15 - 0.085 * (i / 17), 0.042, -0.5 - 0.3 * (i / 17));
+    // the carrier ring the vane row hangs from
+    const carrier = mesh(new THREE.TorusGeometry(TIP(i) + 0.04, 0.026, 8, 80), mat('compStator', 'casingD'),
+      compRows, [STAGE(i) + L.pitch * 0.5, 0, 0]);
+    carrier.rotation.y = Math.PI / 2;
   }
   // exit guide vanes + compressor exit diffuser
   for (const dx of [0, 0.075]) {
@@ -327,19 +334,27 @@ export function buildMachine() {
   tfl.rotation.y = Math.PI / 2;
   tfl.position.x = 2.2;
   for (const [i, x] of L.xT.entries()) {
-    // nozzle row, hung from the casing
+    // nozzle row hung from the casing, with the inner and outer bands that hold the vanes
     row(turbNoz, mat('turbStator', 'nozzle'), x - 0.1, 40 + i * 5, T_HUB[i] + 0.02, T_TIP[i] + 0.02,
       0.22, 0.065, -0.62);
+    for (const [rr, tube] of [[T_TIP[i] + 0.055, 0.028], [T_HUB[i] + 0.005, 0.024]]) {
+      const band = mesh(new THREE.TorusGeometry(rr, tube, 8, 72), mat('turbStator', 'nozzle'), turbNoz, [x - 0.1, 0, 0]);
+      band.rotation.y = Math.PI / 2;
+    }
     // bucket row
     row(turbRotor, mat('turbRotor', 'bladeHot'), x + 0.08, 48 + i * 4, T_HUB[i], T_TIP[i],
       0.22, 0.06, 0.62);
-    // tip shroud: a thin band on the bucket tips, not a full drum
-    const sh = mesh(new THREE.CylinderGeometry(T_TIP[i] + 0.035, T_TIP[i] + 0.035, 0.085, 72, 1, true),
-      mat('turbRotor', 'bladeHot'), turbRotor, [x + 0.08, 0, 0]);
-    sh.rotation.z = Math.PI / 2;
-    // rotor disk
-    const disk = mesh(lathe([[x - 0.1, T_HUB[i] - 0.02], [x + 0.1, T_HUB[i] - 0.02], [x + 0.1, 0.34], [x - 0.1, 0.34]],
-      64), mat('turbRotor', 'rotor'), turbRotor);
+    // segmented tip shroud: twelve arcs with the gaps a real shroud has
+    for (let s = 0; s < 12; s++) {
+      const seg = mesh(new THREE.CylinderGeometry(T_TIP[i] + 0.035, T_TIP[i] + 0.035, 0.085, 5, 1, true,
+        (s / 12) * TAU + 0.012, TAU / 12 - 0.024), mat('turbRotor', 'bladeHot'), turbRotor, [x + 0.08, 0, 0]);
+      seg.rotation.z = Math.PI / 2;
+    }
+    // rotor disk: rim, thin web, bore hub
+    const rim = T_HUB[i] - 0.02;
+    mesh(lathe([[x - 0.11, rim], [x - 0.11, rim - 0.09], [x - 0.03, 0.47], [x - 0.03, 0.35],
+      [x + 0.03, 0.35], [x + 0.03, 0.47], [x + 0.11, rim - 0.09], [x + 0.11, rim]], 64),
+      mat('turbRotor', 'rotor'), turbRotor);
   }
   // turbine rear frame struts into the exhaust
   row(turbCase, mat('turbCase', 'casingD'), L.xTend + 0.04, 6, 0.34, 1.0, 0.3, 0.09, 0.06, 0.2);
@@ -349,6 +364,8 @@ export function buildMachine() {
   mesh(lathe([[L.xTend, 1.34], [3.6, 1.36], [4.6, 1.62], [L.xExh, 1.78], [L.xExh + 0.06, 1.76]], 96),
     mat('exhaust', 'casing'), exhaust);
   mesh(lathe([[L.xTend, 0.95], [4.2, 1.05], [L.xExh, 1.3]], 64), mat('exhaust', 'casingD'), exhaust);
+  // rear frame centre body: the fairing that carries the no.2 bearing out through the diffuser
+  mesh(lathe([[3.24, 0.5], [3.7, 0.42], [4.6, 0.26], [5.2, 0.2]], 48), mat('exhaust', 'casingD'), exhaust);
   const rim = mesh(new THREE.TorusGeometry(1.76, 0.055, 10, 80), mat('exhaust', 'casingD'), exhaust);
   rim.rotation.y = Math.PI / 2;
   rim.position.x = L.xExh + 0.05;
@@ -380,18 +397,24 @@ export function buildMachine() {
   compCase.add(compRows);
 
   const bearings = g('bearings');
-  const race = (x, r) => {
-    const t = mesh(new THREE.TorusGeometry(r, 0.055, 10, 40), mat('bearings', 'casingD'), bearings, [x, 0, 0]);
-    t.rotation.y = Math.PI / 2;
-    return t;
+  // a journal bearing is an assembly: inner race on the shaft, outer race in the housing, rollers and a cage
+  const journal = (x, rIn, rOut, n, phase) => {
+    for (const [rr, tube, mk] of [[rIn, 0.03, 'blade'], [rOut, 0.034, 'casingD']]) {
+      const t = mesh(new THREE.TorusGeometry(rr, tube, 10, 48), mat('bearings', mk), bearings, [x, 0, 0]);
+      t.rotation.y = Math.PI / 2;
+    }
+    const mid = (rIn + rOut) / 2;
+    for (let k = 0; k < n; k++) {
+      const a = (k / n) * TAU + phase;
+      const roll = mesh(new THREE.CylinderGeometry((rOut - rIn) / 2 - 0.006, (rOut - rIn) / 2 - 0.006, 0.075, 12),
+        mat('bearings', 'blade'), bearings, [x, Math.cos(a) * mid, Math.sin(a) * mid]);
+      roll.rotation.z = Math.PI / 2;
+    }
+    const cage = mesh(new THREE.TorusGeometry(mid, 0.011, 6, 64), mat('bearings', 'casingD'), bearings, [x, 0, 0]);
+    cage.rotation.y = Math.PI / 2;
   };
-  race(-5.28, 0.3);
-  race(3.12, 0.28);
-  for (let k = 0; k < 7; k++) {
-    const a = (k / 7) * TAU;
-    const b = mesh(new THREE.SphereGeometry(0.045, 10, 8), mat('bearings', 'blade'), bearings,
-      [-5.28, Math.cos(a) * 0.36, Math.sin(a) * 0.36]);
-  }
+  journal(-5.28, 0.3, 0.44, 9, 0);
+  journal(3.12, 0.28, 0.42, 9, 0.3);
   // bearing support vanes: aerofoil struts, not plates
   row(bearings, mat('bearings', 'casingD'), -5.28, 5, 0.36, 0.63, 0.2, 0.055, 0.06, 0.4);
   row(bearings, mat('bearings', 'casingD'), 3.12, 6, 0.34, 0.56, 0.19, 0.05, -0.06, 0.2);

@@ -35,6 +35,7 @@ const PALETTE = {
   casingD: {color: 0x8d939b, metalness: 0.6, roughness: 0.4},
   rotor: {color: 0x4d535a, metalness: 0.85, roughness: 0.34},
   blade: {color: 0x9ba2aa, metalness: 0.95, roughness: 0.3},
+  bladeS: {color: 0x848b93, metalness: 0.92, roughness: 0.34},
   bladeHot: {color: 0x7b6a5f, metalness: 0.82, roughness: 0.42, emissive: 0x2c1105, emissiveIntensity: 0.26},
   can: {color: 0x8f8478, metalness: 0.72, roughness: 0.4, emissive: 0x2a1206, emissiveIntensity: 0.25},
   nozzle: {color: 0x6d6157, metalness: 0.76, roughness: 0.44, emissive: 0x2a1206, emissiveIntensity: 0.3},
@@ -50,7 +51,7 @@ function bladeGeometry() {
   s.lineTo(0.5, 0);
   s.lineTo(0.46, -0.008);
   s.bezierCurveTo(0.14, -0.028, -0.34, -0.055, -0.5, 0);
-  const g = new THREE.ExtrudeGeometry(s, {depth: 1, bevelEnabled: false, curveSegments: 5});
+  const g = new THREE.ExtrudeGeometry(s, {depth: 1, bevelEnabled: true, bevelThickness: 0.012, bevelSize: 0.012, bevelSegments: 1, curveSegments: 5});
   g.rotateX(-Math.PI / 2); // span → +Y
   g.computeVertexNormals();
   return g;
@@ -182,9 +183,10 @@ export function buildMachine() {
   const compRotor = g('compRotor');
   const compRows = g('compStator');
   const casePts = [[-5.16, 1.1]];
+  // a stepped barrel: each stage keeps its own casing radius across the full pitch, so no stator tip
+  // can break the surface (the earlier linear taper cut through the vane tips and read as dashes)
   for (let i = 0; i < 18; i++) {
-    const x = STAGE(i) - 0.1;
-    casePts.push([x, TIP(i) + 0.045], [x + 0.2, TIP(i) + 0.045]);
+    casePts.push([STAGE(i) - L.pitch * 0.5, TIP(i) + 0.05], [STAGE(i) + L.pitch * 0.5, TIP(i) + 0.05]);
   }
   casePts.push([-0.86, 0.82], [-0.52, 0.8]);
   mesh(lathe(casePts, 96), mat('compCase', 'casing'), compCase);
@@ -192,6 +194,12 @@ export function buildMachine() {
     const fl = mesh(new THREE.TorusGeometry(fr, 0.035, 8, 64), mat('compCase', 'casingD'), compCase);
     fl.rotation.y = Math.PI / 2;
     fl.position.x = fx;
+  }
+  // bolted casing joints every few stages, following the taper
+  for (const i of [3, 6, 9, 12, 15]) {
+    const ring = mesh(new THREE.TorusGeometry(TIP(i) + 0.052, 0.022, 8, 72), mat('compCase', 'casingD'), compCase);
+    ring.rotation.y = Math.PI / 2;
+    ring.position.x = STAGE(i);
   }
 
   // rotor drum: stacked disks on the shaft
@@ -214,12 +222,12 @@ export function buildMachine() {
   // stators between the rotor rows, hung off the casing
   for (let i = 0; i < 18; i++) {
     const n = Math.round(56 + 34 * (i / 17));
-    row(compRows, mat('compStator', 'blade'), STAGE(i) + L.pitch * 0.5, n, HUB(i) + 0.005, TIP(i) + 0.04,
+    row(compRows, mat('compStator', 'bladeS'), STAGE(i) + L.pitch * 0.5, n, HUB(i) + 0.005, TIP(i) + 0.03,
       0.15 - 0.085 * (i / 17), 0.042, -0.5 - 0.3 * (i / 17));
   }
   // exit guide vanes + compressor exit diffuser
   for (const dx of [0, 0.075]) {
-    row(compRows, mat('compStator', 'blade'), L.xOgv + dx, 58, 0.62, 0.8, 0.09, 0.02, -0.2);
+    row(compRows, mat('compStator', 'bladeS'), L.xOgv + dx, 58, 0.62, 0.8, 0.09, 0.02, -0.2);
   }
 
   // ---------------------------------------------------------------- combustor (14 cans)
@@ -278,6 +286,11 @@ export function buildMachine() {
         [L.xCan0 + 0.15, cy + Math.cos(a) * 0.13, cz + Math.sin(a) * 0.13]);
       sp.rotation.z = Math.PI / 2;
     }
+    // the bolted can cover on the combustor shell — the visual signature of a 9FA from outside
+    const cover = mesh(new THREE.CylinderGeometry(0.175, 0.175, 0.09, 22), mat('combCase', 'casingD'), combCase,
+      [0.52, Math.cos(th) * 1.305, Math.sin(th) * 1.305]);
+    cover.rotation.x = th;
+
     // transition piece: can exit down to the stage-1 nozzle annulus
     const curve = new THREE.CatmullRomCurve3([
       new V3(L.xCan1 - 0.05, cy, cz),
@@ -285,7 +298,8 @@ export function buildMachine() {
       new V3(L.xTrans1 - 0.08, cy * 0.68, cz * 0.68),
       new V3(L.xTrans1, cy * 0.64, cz * 0.64),
     ]);
-    mesh(sweep(curve, (u) => L.canBody * (1.02 + 0.55 * u * u), 18, 20), mat('cans', 'can'), cans);
+    // transition ducts hang off the casing, not the cans, so the two assemblies separate honestly
+    mesh(sweep(curve, (u) => L.canBody * (1.02 + 0.55 * u * u), 18, 20), mat('combCase', 'can'), combCase);
   }
 
   // ---------------------------------------------------------------- turbine
@@ -316,12 +330,7 @@ export function buildMachine() {
       64), mat('turbRotor', 'rotor'), turbRotor);
   }
   // turbine rear frame struts into the exhaust
-  for (let k = 0; k < 6; k++) {
-    const a = (k / 6) * TAU + 0.2;
-    const st = mesh(new THREE.BoxGeometry(0.28, 0.9, 0.075), mat('turbCase', 'casingD'), turbCase,
-      [L.xTend + 0.04, Math.cos(a) * 0.72, Math.sin(a) * 0.72]);
-    st.rotation.x = -a;
-  }
+  row(turbCase, mat('turbCase', 'casingD'), L.xTend + 0.04, 6, 0.34, 1.0, 0.3, 0.09, 0.06, 0.2);
 
   // ---------------------------------------------------------------- exhaust diffuser
   const exhaust = g('exhaust');
@@ -371,28 +380,21 @@ export function buildMachine() {
     const b = mesh(new THREE.SphereGeometry(0.045, 10, 8), mat('bearings', 'blade'), bearings,
       [-5.28, Math.cos(a) * 0.36, Math.sin(a) * 0.36]);
   }
-  for (let k = 0; k < 5; k++) {
-    const a = (k / 5) * TAU + 0.4;
-    const s = mesh(new THREE.BoxGeometry(0.22, 0.62, 0.05), mat('bearings', 'casingD'), bearings,
-      [-5.28, Math.cos(a) * 0.62, Math.sin(a) * 0.62]);
-    s.rotation.x = -a;
-  }
-  for (let k = 0; k < 6; k++) {
-    const a = (k / 6) * TAU + 0.2;
-    const s = mesh(new THREE.BoxGeometry(0.2, 0.55, 0.045), mat('bearings', 'casingD'), bearings,
-      [3.12, Math.cos(a) * 0.55, Math.sin(a) * 0.55]);
-    s.rotation.x = -a;
-  }
+  // bearing support vanes: aerofoil struts, not plates
+  row(bearings, mat('bearings', 'casingD'), -5.28, 5, 0.36, 0.63, 0.2, 0.055, 0.06, 0.4);
+  row(bearings, mat('bearings', 'casingD'), 3.12, 6, 0.34, 0.56, 0.19, 0.05, -0.06, 0.2);
 
   // ---------------------------------------------------------------- fade / cut / explode
+  // shells lift off the rotor, the can assembly drops out of its casing: the exploded view shows the
+  // assemblies coming apart, not the parts sliding along the axis and staying hidden inside the shells
   const explode = {
-    inlet: [-2.4, 0, 0],
-    compCase: [-1.1, 0.15, 0],
-    cans: [0.55, 0, 0],
-    combCase: [0.55, 0, 0],
-    turbCase: [1.95, 0.35, 0],
+    inlet: [-2.6, 1.55, 0],
+    compCase: [-1.0, 1.55, 0],
+    cans: [0, -1.15, 0],
+    combCase: [0.55, 1.65, 0],
+    turbCase: [1.95, 1.5, 0],
     turbRotor: [1.5, 0, 0],
-    exhaust: [3.1, 0, 0],
+    exhaust: [3.3, 1.75, 0],
   };
   const basePos = new Map();
   for (const [k, grp] of Object.entries(groups)) basePos.set(grp, grp.position.clone());
@@ -543,9 +545,9 @@ export function buildMachine() {
     for (const k of Object.keys(groups)) o[k] = parts ? 0 : 1;
     if (Array.isArray(parts)) for (const k of parts) o[k] = 1;
     else if (parts) Object.assign(o, parts);
-    if (cut === 'glass' && !parts) {
-      for (const c of CASINGS) o[c] = GLASS[c];
-    }
+    // a casing that would come back at full opacity in GLASS mode must stay glass, or the isolated
+    // subsystem hides the very parts the view exists to show
+    if (cut === 'glass') for (const c of CASINGS) if (o[c] === 1) o[c] = GLASS[c];
     fadeTo(o);
   };
   const setGas = (v) => (gasOn = v);

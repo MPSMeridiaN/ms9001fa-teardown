@@ -1,0 +1,11 @@
+{
+  "name": "ms9001fa-teardown",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Interactive 3D cutaway of the GE MS9001FA (PG9351FA) gas turbine, built with the teardown skill",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "license": "MIT"
+}

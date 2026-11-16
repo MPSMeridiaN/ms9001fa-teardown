@@ -139,6 +139,9 @@ const CSS = `
 #chart{display:block;width:100%;height:150px}
 .p-note{left:36px;top:860px;width:1132px;font:400 10.5px/1.55 Inter,sans-serif;color:var(--faint)}
 .p-note b{color:var(--muted);font-weight:600}
+.p-note .src{color:var(--muted);text-decoration:none;border-bottom:1px solid var(--line);pointer-events:auto}
+.p-note .src:hover{color:var(--ink);border-bottom-color:var(--ink)}
+.p-note .src:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
 /* ---------- callouts ---------- */
 .co{position:absolute;top:0;left:0;pointer-events:none;opacity:0;transition:opacity .2s ease-out}
@@ -375,7 +378,8 @@ export function createConsole(app) {
   const note = add('div', 'pan p-note');
   note.innerHTML =
     '<b>GE MS9001FA</b> · 255.6 MW ISO · heat rate 9,250 Btu/kWh (9,757 kJ/kWh) · pressure ratio 15.4:1 · 624 kg/s · 3,000 rpm · exhaust 609 °C. ' +
-    'Stage counts and performance from GE PSP30027-06; firing temperature is the F-class class figure; frame proportions scaled from the published 9F cutaway.';
+    'Stage counts and performance from GE PSP30027-06; firing temperature is the F-class class figure; frame proportions scaled from the published 9F cutaway. ' +
+    '<a class="src" href="https://github.com/MPSMeridiaN/ms9001fa-teardown/blob/main/SOURCES.md" target="_blank" rel="noopener">Sources</a>';
 
   // ------------------------------------------------------------ measuring
   const spots = {};

@@ -46,7 +46,7 @@ Space activate, and the focus ring is the accent. `prefers-reduced-motion` stops
 | Combustor | 14 can-annular, DLN-2.0+ |
 | Turbine | 3 stages, stage 1–2 buckets air-cooled |
 
-Source: GE's MS9001FA product sheet (PSP30027-06) and the published 9FA configuration description.
+Source: GE's MS9001FA product sheet (PSP30027-06) and the published 9FA configuration description - every figure, formula and assumption is itemised in SOURCES.md.
 `gt9fa/spec.js` is the only place those numbers live: one input (load) drives pressure ratio, firing
 temperature, airflow, the expansion, fuel flow and every station of the chart. At base load the model
 reproduces the datasheet heat rate and exhaust temperature (9,758 kJ/kWh, 36.9 %, 609 °C).

@@ -203,7 +203,7 @@ const CSS = `
 #app.port .seg .opt{font-size:9.5px;padding:0 2px;margin:0}
 #app.port .p-ctl > .grp:nth-child(4){display:flex;flex-wrap:wrap;gap:0 18px}
 #app.port .p-ctl > .grp:nth-child(4) .grp-t{flex:0 0 100%}
-#app.port .tog{height:38px;font-size:10.5px;width:auto}
+#app.port .tog{height:44px;font-size:10.5px;width:auto}
 #app.port .load-head{margin-bottom:8px}
 #app.port .range{height:36px}
 #app.port .range::-webkit-slider-thumb{width:20px;height:20px;margin-top:-9px}

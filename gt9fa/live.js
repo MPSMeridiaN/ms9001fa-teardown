@@ -398,10 +398,14 @@ export function runLive() {
       const cur = ring;
       const cx = cur.x || target[0];
       const cy = cur.y || target[1];
+      const nx = cx + (target[0] - cx) * k;
+      const ny = cy + (target[1] - cy) * k;
       cursor = {
-        x: cx + (target[0] - cx) * k,
-        y: cy + (target[1] - cy) * k,
+        x: nx,
+        y: ny,
         press: T - pressAt < 0.3,
+        // the pointer earns its place: it appears while travelling and at the click, then leaves the panel alone
+        vis: Math.hypot(target[0] - nx, target[1] - ny) > 1.5 || T - pressAt < 0.75,
       };
       ring = {t: T, x: cursor.x, y: cursor.y};
     } else {

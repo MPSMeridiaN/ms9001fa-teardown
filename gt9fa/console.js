@@ -86,7 +86,7 @@ const CSS = `
   cursor:pointer;pointer-events:auto;transition:background .16s ease-out,border-color .16s ease-out,color .16s ease-out}
 .opt:last-child{margin-bottom:0}
 .opt .l{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.opt .s{font:500 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.02em;color:var(--faint);
+.opt .s{font:500 10px/1 Inter,sans-serif;letter-spacing:.02em;color:var(--faint);
   text-transform:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .opt:hover{border-color:#b9bcc2;background:#fff}
 .opt:active{background:#eceef0}
@@ -100,13 +100,14 @@ const CSS = `
 .tog{display:flex;align-items:center;gap:9px;width:100%;height:28px;padding:0;border:0;background:none;
   color:var(--ink);font:600 11px/1 Inter,sans-serif;letter-spacing:.07em;text-transform:uppercase;
   cursor:pointer;pointer-events:auto;text-align:left}
-.tog .sw{position:relative;flex:0 0 28px;width:28px;height:15px;border:1px solid #c3c6cb;background:#e6e8ea;
-  transition:background .16s ease-out,border-color .16s ease-out}
-.tog .sw::after{content:'';position:absolute;left:1px;top:1px;width:11px;height:11px;background:#fff;
-  border:1px solid #c3c6cb;transition:left .16s ease-out,background .16s ease-out,border-color .16s ease-out}
-.tog[aria-pressed="true"] .sw{background:var(--ink);border-color:var(--ink)}
-.tog[aria-pressed="true"] .sw::after{left:14px;background:var(--accent);border-color:var(--ink)}
-.tog:hover .sw{border-color:#9aa0a7}
+.tog .sw{position:relative;flex:0 0 32px;width:32px;height:17px;background:#c6cbd1;border:0;
+  box-shadow:inset 0 0 0 1px rgba(20,23,26,.12);transition:background .16s ease-out}
+.tog .sw::after{content:'';position:absolute;left:2px;top:2px;width:13px;height:13px;background:#fff;
+  box-shadow:0 1px 2px rgba(20,23,26,.3);transition:left .16s ease-out,background .16s ease-out}
+.tog[aria-pressed="true"] .sw{background:var(--ink);box-shadow:none}
+.tog[aria-pressed="true"] .sw::after{left:17px;background:var(--accent)}
+.tog:hover .sw{background:#b9bfc6}
+.tog[aria-pressed="true"]:hover .sw{background:#2c3037}
 
 .load-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:7px}
 .load-head .k{font:500 10.5px/1 Inter,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
@@ -147,11 +148,12 @@ const CSS = `
 .co .s{font:500 10px/1.3 'JetBrains Mono',monospace;color:var(--muted);white-space:nowrap;margin-top:3px}
 
 /* ---------- cursor + chip ---------- */
-.cur{position:absolute;top:0;left:0;width:11px;height:11px;margin:-5.5px 0 0 -5.5px;border-radius:50%;
-  border:1.5px solid rgba(20,23,26,.5);background:rgba(255,255,255,.55);pointer-events:none;
+.cur{position:absolute;top:0;left:0;width:15px;height:21px;margin:0 0 0 -1px;pointer-events:none;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='21' viewBox='0 0 15 21'%3E%3Cpath d='M2 1.5 L2 16.2 L6 12.4 L8.8 18.6 L11.4 17.4 L8.6 11.2 L13.6 11.2 Z' fill='%2314171a' stroke='%23fff' stroke-width='1.4' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat;
   opacity:0;transition:opacity .2s;z-index:40}
 .cur.on{opacity:1}
-.cur::after{content:'';position:absolute;inset:-8px;border-radius:50%;border:1.5px solid var(--accent);opacity:0}
+.cur::after{content:'';position:absolute;left:-11px;top:-11.5px;width:26px;height:26px;border-radius:50%;
+  border:1.5px solid var(--accent);opacity:0}
 .cur.press::after{animation:pr .45s ease-out}
 @keyframes pr{0%{opacity:.9;transform:scale(.5)}100%{opacity:0;transform:scale(1.5)}}
 .chip{position:absolute;left:800px;top:74px;transform:translateX(-50%);display:flex;align-items:center;gap:7px;
@@ -205,6 +207,9 @@ const CSS = `
 #app.port .p-ctl > .grp:nth-child(4){display:flex;flex-wrap:wrap;gap:0 18px}
 #app.port .p-ctl > .grp:nth-child(4) .grp-t{flex:0 0 100%}
 #app.port .tog{height:44px;font-size:10.5px;width:auto}
+#app.port .tog .sw{flex:0 0 40px;width:40px;height:22px}
+#app.port .tog .sw::after{width:17px;height:17px}
+#app.port .tog[aria-pressed="true"] .sw::after{left:21px}
 #app.port .load-head{margin-bottom:8px}
 #app.port .range{height:36px}
 #app.port .range::-webkit-slider-thumb{width:20px;height:20px;margin-top:-9px}
@@ -563,9 +568,9 @@ export function createConsole(app) {
     }
 
     if (ops.cursor) {
-      cursor.classList.add('on');
       cursor.style.transform = `translate(${ops.cursor.x}px, ${ops.cursor.y}px)`;
       cursor.classList.toggle('press', !!ops.cursor.press);
+      cursor.classList.toggle('on', ops.cursor.vis !== false);
     } else cursor.classList.remove('on');
 
     drawChart(s);

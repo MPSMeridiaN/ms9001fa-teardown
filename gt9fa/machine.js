@@ -277,6 +277,18 @@ export function buildMachine() {
     const fl = mesh(canGeo.flame, mat('cans', 'flame'), cans, [L.xCan0 + 0.52, cy, cz]);
     fl.scale.set(1, 1, 1);
     flames.push(fl);
+    // L1 detail: liner cooling rings, swirler and the nozzle flange, so a close-up can reads as a DLN cap
+    for (const dx of [0.34, 0.62, 0.9]) {
+      const rr = mesh(new THREE.TorusGeometry(L.canBody + 0.008, 0.011, 8, 26), mat('cans', 'can'), cans,
+        [L.xCan0 + dx, cy, cz]);
+      rr.rotation.y = Math.PI / 2;
+    }
+    const sw = mesh(new THREE.CylinderGeometry(0.108, 0.108, 0.03, 20), mat('cans', 'bladeHot'), cans,
+      [L.xCan0 + 0.11, cy, cz]);
+    sw.rotation.z = Math.PI / 2;
+    const nf = mesh(new THREE.TorusGeometry(0.088, 0.016, 8, 22), mat('cans', 'bladeHot'), cans,
+      [L.xCan0 + 0.03, cy, cz]);
+    nf.rotation.y = Math.PI / 2;
     const nz = mesh(canGeo.nozzle, mat('cans', 'bladeHot'), cans, [L.xCan0 + 0.03, cy, cz]);
     nz.rotation.x = 0;
     // six fuel spokes on the nozzle cap

@@ -155,7 +155,7 @@ const CSS = `
 .cur.press::after{animation:pr .45s ease-out}
 @keyframes pr{0%{opacity:.9;transform:scale(.5)}100%{opacity:0;transform:scale(1.5)}}
 .chip{position:absolute;left:800px;top:74px;transform:translateX(-50%);display:flex;align-items:center;gap:7px;
-  height:23px;padding:0 11px;border:1px solid var(--line);background:rgba(255,255,255,.94);color:var(--ink);
+  height:27px;padding:0 12px;border:1px solid var(--line);background:rgba(255,255,255,.94);color:var(--ink);
   font-size:9.5px;font-weight:600;letter-spacing:.11em;text-transform:uppercase;white-space:nowrap;cursor:pointer;z-index:30}
 .chip i{display:block;width:6px;height:6px;border-radius:50%;background:var(--accent)}
 .chip[aria-pressed="true"] i{animation:blink 1.2s steps(2) infinite}
@@ -210,7 +210,7 @@ const CSS = `
 #app.port .gen{display:none}
 #app.port .range-ends{display:none}
 #app.port .grp{margin-bottom:10px}
-#app.port .chip{left:50%;transform:translateX(-50%);top:auto;display:flex;font-size:9px;height:26px}
+#app.port .chip{left:50%;transform:translateX(-50%);top:auto;display:flex;font-size:9.5px;height:44px;padding:0 16px}
 `;
 
 export function createConsole(app) {

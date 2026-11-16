@@ -375,8 +375,7 @@ export function createConsole(app) {
   const note = add('div', 'pan p-note');
   note.innerHTML =
     '<b>GE MS9001FA</b> · 255.6 MW ISO · heat rate 9,250 Btu/kWh (9,757 kJ/kWh) · pressure ratio 15.4:1 · 624 kg/s · 3,000 rpm · exhaust 609 °C. ' +
-    'Stage counts and performance from GE PSP30027-06; frame proportions scaled from the published 9F cutaway. ' +
-    'The panels read the same model that poses the parts.';
+    'Stage counts and performance from GE PSP30027-06; firing temperature is the F-class class figure; frame proportions scaled from the published 9F cutaway.';
 
   // ------------------------------------------------------------ measuring
   const spots = {};
@@ -428,23 +427,35 @@ export function createConsole(app) {
     const g = ctx;
     g.clearRect(0, 0, W, H);
     const prof = profile(s, 150);
-    const padL = 0;
-    const padR = 0;
-    const padT = 18 * px;
+    const padL = 62 * px;
+    const padR = 48 * px;
+    const padT = 16 * px;
     const padB = 26 * px;
     const xOf = (u) => padL + u * (W - padL - padR);
-    const yT = (t) => H - padB - (t / 1450) * (H - padT - padB);
-    const yP = (p) => H - padB - (p / 17) * (H - padT - padB);
+    const T_MAX = 1500;
+    const P_MAX = 18;
+    const yT = (t) => H - padB - (Math.min(t, T_MAX) / T_MAX) * (H - padT - padB);
+    const yP = (p) => H - padB - (Math.min(p, P_MAX) / P_MAX) * (H - padT - padB);
 
-    // grid
-    g.strokeStyle = 'rgba(20,23,26,.07)';
-    g.lineWidth = 1 * px;
-    for (let i = 1; i <= 3; i++) {
-      const y = padT + ((H - padT - padB) * i) / 4;
+    // axes: temperature on the left, pressure on the right, each label in its series' ink
+    g.font = `500 ${9.5 * px}px 'JetBrains Mono', monospace`;
+    g.textBaseline = 'middle';
+    g.textAlign = 'right';
+    for (const t of [0, 500, 1000, 1500]) {
+      const y = yT(t);
       g.beginPath();
       g.moveTo(padL, y);
       g.lineTo(W - padR, y);
+      g.strokeStyle = t === 0 ? 'rgba(20,23,26,.2)' : 'rgba(20,23,26,.07)';
+      g.lineWidth = 1 * px;
       g.stroke();
+      g.fillStyle = '#6d747c';
+      g.fillText(t === 1500 ? '1,500 °C' : String(t), padL - 7 * px, y);
+    }
+    g.textAlign = 'left';
+    for (const p of [0, 5, 10, 15]) {
+      g.fillStyle = '#41474e';
+      g.fillText(p === 15 ? '15 bar' : String(p), W - padR + 8 * px, yP(p));
     }
 
     // temperature area
@@ -480,9 +491,17 @@ export function createConsole(app) {
       [0.62, 0.79, 'TURBINE · 3 STAGES'],
       [0.79, 1, 'EXHAUST'],
     ];
+    const halo = (text, x, y, color) => {
+      g.lineWidth = 3.5 * px;
+      g.strokeStyle = 'rgba(236,237,239,.94)';
+      g.lineJoin = 'round';
+      g.strokeText(text, x, y);
+      g.fillStyle = color;
+      g.fillText(text, x, y);
+    };
     g.font = `500 ${10.5 * px}px Inter, sans-serif`;
-    g.textBaseline = 'alphabetic';
     g.letterSpacing = `${0.8 * px}px`;
+    g.textAlign = 'left';
     for (const [a, b, label] of segs) {
       if (a > 0) {
         g.beginPath();
@@ -497,25 +516,34 @@ export function createConsole(app) {
       const w = g.measureText(label).width;
       const mid = ((a + b) / 2) * W;
       g.fillStyle = '#5b626a';
-      g.fillText(label, Math.min(W - w - 2, Math.max(2, mid - w / 2)), H - 6 * px);
+      g.fillText(label, Math.min(W - padR - w, Math.max(padL, mid - w / 2)), H - 6 * px);
     }
 
-    // firing point + peak annotation
+    // annotations: the firing point and the pressure peak, both kept inside the plot
     const fire = prof.find((p) => p.x >= 0.62) || prof[prof.length - 1];
+    const fx = xOf(fire.x);
+    const fy = yT(fire.t);
     g.beginPath();
-    g.arc(xOf(fire.x), yT(fire.t), 3.5 * px, 0, Math.PI * 2);
+    g.arc(fx, fy, 3.5 * px, 0, Math.PI * 2);
     g.fillStyle = '#e8491d';
     g.fill();
     g.font = `600 ${11 * px}px 'JetBrains Mono', monospace`;
     g.letterSpacing = '0px';
-    g.fillStyle = '#14171a';
-    g.textAlign = 'right';
-    g.fillText(`${fmt(s.firingC)} °C`, xOf(fire.x) - 8 * px, yT(fire.t) - 10 * px);
+    const fireText = `${fmt(s.firingC)} °C`;
+    const fw = g.measureText(fireText).width;
+    const fyLabel = fy - 13 * px > padT + 6 * px ? fy - 13 * px : fy + 18 * px;
+    // just right of the dot: above the descending curve, clear of the pressure label further left
+    g.textAlign = 'left';
+    halo(fireText, Math.min(fx + 9 * px, W - padR - fw - 2 * px), fyLabel, '#14171a');
+
     const peak = prof.reduce((m, p) => (p.p > m.p ? p : m), prof[0]);
+    const barText = `${fmt(peak.p, 1)} bar`;
+    const bw = g.measureText(barText).width;
+    // above the plateau it labels, and never outside the plot
+    const barX = Math.min(xOf(peak.x) + 12 * px, W - padR - bw - 2 * px);
+    const barY = Math.max(padT + 7 * px, yP(peak.p) - 15 * px);
     g.textAlign = 'left';
-    g.fillStyle = '#41474e';
-    g.fillText(`${fmt(peak.p, 1)} bar`, Math.min(W - 58 * px, xOf(peak.x) + 6 * px), yP(peak.p) - 8 * px);
-    g.textAlign = 'left';
+    halo(barText, barX, barY, '#41474e');
   }
 
   // ------------------------------------------------------------ frame

@@ -64,7 +64,7 @@ const TOUR = [
   {t: 18.5, view: 'combustor', cam: 'combustor', load: 0.78, gas: 1, explode: 0, cut: 'glass', press: 'combustor'},
   {t: 26, view: 'turbine', cam: 'turbine', load: 1, gas: 1, explode: 0, cut: 'glass', press: 'turbine'},
   {t: 33, view: 'rotor', cam: 'rotor', load: 1, gas: 0, explode: 0, cut: 'solid', press: 'rotor'},
-  {t: 40.5, view: 'overview', cam: 'hero', load: 1, gas: 0, explode: 1, cut: 'glass', press: 'exhaust'},
+  {t: 40.5, view: 'overview', cam: 'side', load: 1, gas: 0, explode: 1, cut: 'glass', press: 'exhaust'},
   {t: 47.5, view: 'combustor', cam: 'detail', load: 0.9, gas: 1, explode: 0, cut: 'section', press: 'combustor'},
   {t: 54, view: 'overview', cam: 'hero', load: 1, gas: 0, explode: 0, cut: 'glass'},
 ];
@@ -427,13 +427,15 @@ export function runLive() {
 
     const v = CAMS[camName] || CAMS.hero;
     const tgt = {
-      tx: v.tx + off.az * 0.001,
+      // the exploded line grows to the right of the frame, so the subject follows it and the camera steps back
+      tx: v.tx + off.az * 0.001 + explode * 4.7,
       ty: v.ty,
       tz: v.tz,
       az: v.az + off.az,
       el: clamp(v.el + off.el, -6, 80),
       // portrait owns a narrower pane, so the same part has to sit further back to read at the same size
-      d: v.d * (mode === 'port' ? clamp(2.3 * 0.462 / (W / H), 1.15, 3.2) : 1) * off.k,
+      // the exploded line is longer than the assembled machine, so the camera steps back with it
+      d: v.d * (mode === 'port' ? clamp(2.3 * 0.462 / (W / H), 1.15, 3.2) : 1) * (1 + 1.12 * explode) * off.k,
       sx: 0,
       sy: syBase,
     };

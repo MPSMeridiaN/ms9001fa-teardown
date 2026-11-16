@@ -21,7 +21,7 @@ presses its own buttons; a click, drag, wheel or key hands control over, and 25 
 | **Cutaway** | SOLID (as built), GLASS (casings see-through), SECTION (near half clipped away) |
 | **Camera** | 3/4, INLET, SIDE, AXIAL, DETAIL |
 | **Drag mode** | DRAG OBJECT (default, the part follows your finger) or DRAG CAMERA (both axes inverted); remembered per browser |
-| **Overlays** | GAS PATH (flow particles coloured by station temperature), EXPLODED VIEW (axial spread) |
+| **Overlays** | GAS PATH (flow particles coloured by station temperature), EXPLODED VIEW (every module slides out along the machine axis in order, the shaft stays as the spine) |
 | **Load** | fuel demand 5–100 % |
 | Keys | `1`–`5` cameras, `G` gas path, `E` explode, `I` invert drag, `H` hide overlay, arrows load |
 

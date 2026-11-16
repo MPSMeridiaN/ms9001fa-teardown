@@ -395,6 +395,8 @@ export function buildMachine() {
 
   // both rotors spin on the same shaft angle, but stay separate groups so either can be shown alone
   compCase.add(compRows);
+  // the nozzle rows are carried by the turbine casing, so they travel with it when the machine explodes
+  turbCase.add(turbNoz);
 
   const bearings = g('bearings');
   // a journal bearing is an assembly: inner race on the shaft, outer race in the housing, rollers and a cage
@@ -420,16 +422,17 @@ export function buildMachine() {
   row(bearings, mat('bearings', 'casingD'), 3.12, 6, 0.34, 0.56, 0.19, 0.05, -0.06, 0.2);
 
   // ---------------------------------------------------------------- fade / cut / explode
-  // shells lift off the rotor, the can assembly drops out of its casing: the exploded view shows the
-  // assemblies coming apart, not the parts sliding along the axis and staying hidden inside the shells
+  // axial explode: every module slides out along the machine axis in the order it sits, the shaft stays
+  // as the spine — the classic teardown diagram, one direction for every part
   const explode = {
-    inlet: [-2.6, 1.55, 0],
-    compCase: [-1.0, 1.55, 0],
-    cans: [0, -1.15, 0],
-    combCase: [0.55, 1.65, 0],
-    turbCase: [1.95, 1.5, 0],
-    turbRotor: [1.5, 0, 0],
-    exhaust: [3.3, 1.75, 0],
+    inlet: [-2.6, 0, 0],
+    compCase: [-1.3, 0, 0],
+    compRotor: [4.6, 0, 0],
+    cans: [5.6, 0, 0],
+    combCase: [7.9, 0, 0],
+    turbRotor: [9.2, 0, 0],
+    turbCase: [11.4, 0, 0],
+    exhaust: [12.8, 0, 0],
   };
   const basePos = new Map();
   for (const [k, grp] of Object.entries(groups)) basePos.set(grp, grp.position.clone());

@@ -27,6 +27,11 @@ presses its own buttons; a click, drag, wheel or key hands control over, and 25 
 
 Drag to orbit, wheel to zoom, or just watch. Rotor motion is shown at 1/50 of the real 3,000 rpm.
 
+Two compositions, not one squeezed: a 1600 × 900 console around the machine on landscape screens, and a
+portrait stack in real CSS pixels on phones — 44 px targets, the station chart gives way to the machine and
+the controls. Every control is a real `<button>` or `<input type="range">`, so Tab reaches them, Enter and
+Space activate, and the focus ring is the accent. `prefers-reduced-motion` stops the tour from starting.
+
 ## The machine
 
 | | |

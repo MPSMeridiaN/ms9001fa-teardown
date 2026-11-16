@@ -74,34 +74,27 @@ export function runLive() {
   document.title = 'GE MS9001FA — Gas Turbine Teardown';
   const style = document.createElement('style');
   style.textContent = `
-    html,body{background:#ecedef;overflow:hidden;margin:0}
-    #app{position:absolute;inset:auto!important;left:0;top:0;width:${W}px;height:${H}px;transform-origin:0 0}
-    .chip{position:absolute;left:800px;top:74px;transform:translateX(-50%);display:flex;align-items:center;gap:7px;height:22px;
-      padding:0 12px;border:1px solid #e1e3e6;background:rgba(255,255,255,.93);color:#16181b;
-      font:600 8.8px Inter,sans-serif;letter-spacing:1.5px;white-space:nowrap;cursor:pointer;pointer-events:auto;z-index:30}
-    .chip i{display:block;width:6px;height:6px;border-radius:50%;background:#e8491d}
-    .chip.on i{animation:blink 1.2s steps(2) infinite}
-    @keyframes blink{50%{opacity:.15}}
-    .turn{position:fixed;left:0;right:0;bottom:16px;text-align:center;font:600 12px/1.4 'JetBrains Mono',monospace;
-      letter-spacing:1px;color:#8b8f95;text-transform:uppercase;display:none}
-    @media (orientation:portrait) and (max-width:820px){.turn{display:block}}
+    html,body{background:#ecedef;overflow:hidden;margin:0;overscroll-behavior:none}
+    #app{position:absolute;inset:auto!important;left:0;top:0;transform-origin:0 0}
   `;
   document.head.appendChild(style);
 
   const app = document.getElementById('app');
+  // two compositions: a landscape console around the machine, a portrait stack for phones.
+  // landscape is a fixed 1600 x 900 board scaled to the window; portrait lays out in real CSS pixels,
+  // so touch targets stay 44 px and type stays legible.
+  const sizeFor = (m) => (m === 'land' ? [1600, 900] : [Math.max(320, innerWidth), Math.max(560, innerHeight)]);
+  const modeOf = () => (innerWidth / Math.max(1, innerHeight) >= 1.25 ? 'land' : 'port');
+  let mode = modeOf();
+  let [W, H] = sizeFor(mode);
+  app.classList.toggle('port', mode === 'port');
+
   const canvas = document.createElement('canvas');
   canvas.id = 'gl';
   app.appendChild(canvas);
   const st = createStage({canvas});
-  const ui0 = createConsole(app);
-  const ui = ui0;
-  const note = document.createElement('div');
-  note.className = 'turn';
-  note.textContent = 'Turn your phone sideways for the full console';
-  document.body.appendChild(note);
-  const chip = document.createElement('div');
-  chip.className = 'chip';
-  ui.root.appendChild(chip);
+  const ui = createConsole(app);
+  ui.measure();
 
   // ------------------------------------------------------------ quality tiers
   const TIERS = [
@@ -110,17 +103,58 @@ export function runLive() {
     {samples: 2, ao: false, shadow: 1024, pr: 1},
   ];
   const light = matchMedia('(pointer: coarse)').matches || Math.min(innerWidth, innerHeight) < 700;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   let tier = light ? 2 : 0;
   let scale = 1;
+  let syBase = 0;
+
+  // centre the machine in whatever the panels leave free, so the subject never sits under a panel
+  const layoutOffsets = () => {
+    const a = app.getBoundingClientRect();
+    const s = a.width / W || 1;
+    const box = (sel) => {
+      const n = ui.root.querySelector(sel);
+      if (!n) return null;
+      const r = n.getBoundingClientRect();
+      if (r.height === 0) return null;
+      return [(r.top - a.top) / s, (r.bottom - a.top) / s];
+    };
+    const head = box('.p-head');
+    const read = box('.p-read');
+    const chart = box('.p-chart');
+    const ctl = box('.p-ctl');
+    const top = mode === 'port' && read ? read[1] : head ? head[1] : 60;
+    const bottom = mode === 'port' ? (ctl ? ctl[0] : H * 0.72) : chart ? chart[0] : H - 40;
+    syBase = (top + bottom) / 2 - H / 2;
+    ui.setBounds(top, bottom);
+    if (mode === 'port' && read) ui.chip.style.top = `${read[1] + 8}px`;
+  };
+
   const fit = () => {
     scale = Math.min(innerWidth / W, innerHeight / H);
+    app.style.width = `${W}px`;
+    app.style.height = `${H}px`;
     app.style.transform = `translate(${(innerWidth - W * scale) / 2}px, ${(innerHeight - H * scale) / 2}px) scale(${scale})`;
-    st.setQuality({...TIERS[tier], pr: clamp((devicePixelRatio || 1) * scale, 0.75, TIERS[tier].pr)});
+    const pr = clamp((devicePixelRatio || 1) * scale, 0.75, TIERS[tier].pr);
+    st.setQuality({...TIERS[tier], pr: 1});
+    st.resize(W, H, pr);
+    ui.measure();
+    layoutOffsets();
+  };
+  const relayout = () => {
+    const m = modeOf();
+    if (m !== mode) {
+      mode = m;
+      W = DESIGN_W[mode];
+      app.classList.toggle('port', mode === 'port');
+    }
+    [W, H] = sizeFor(mode);
+    fit();
   };
   st.setQuality(TIERS[0]);
-  addEventListener('resize', fit);
-  fit();
-  ui.measure();
+  addEventListener('resize', relayout);
+  addEventListener('orientationchange', () => setTimeout(relayout, 220));
+  relayout();
 
   const toStage = (cx, cy) => {
     const r = app.getBoundingClientRect();
@@ -139,6 +173,8 @@ export function runLive() {
   let explodeTarget = 0;
   let angle = 0;
   let hidden = false;
+  let chipLabel = null;
+  let chipMode = null;
   // how a drag maps to the orbit: 'object' = the part follows your finger, 'camera' = the camera does (inverted)
   let orbit = (() => {
     try {
@@ -188,14 +224,14 @@ export function runLive() {
     isoParts = ISO[view];
   };
 
-  chip.addEventListener('pointerdown', (e) => {
+  ui.chip.addEventListener('click', (e) => {
     e.stopPropagation();
     lastInput = T;
     if (AP.on) takeOver();
     else startTour();
   });
   addEventListener('pointerdown', (e) => {
-    if (e.target !== chip) takeOver();
+    if (e.target !== ui.chip) takeOver();
   });
 
   // ------------------------------------------------------------ controls
@@ -246,26 +282,14 @@ export function runLive() {
     explodeTarget = explodeTarget > 0.5 ? 0 : 1;
   });
 
-  // load slider
+  // load slider — a real range input, so the keyboard works without inventing anything
   const sliderEl = ui.slider;
-  const applySlider = (e) => {
-    const r = sliderEl.getBoundingClientRect();
-    const k = clamp((e.clientX - r.left) / r.width, 0, 1);
-    loadTarget = clamp(k, 0.05, 1);
-    lastInput = T;
-  };
-  sliderEl.addEventListener('pointerdown', (e) => {
+  sliderEl.addEventListener('input', (e) => {
     takeOver();
-    sliderEl.setPointerCapture(e.pointerId);
-    const move = (ev) => applySlider(ev);
-    const up = () => {
-      removeEventListener('pointermove', move);
-      removeEventListener('pointerup', up);
-    };
-    addEventListener('pointermove', move);
-    addEventListener('pointerup', up);
-    applySlider(e);
+    loadTarget = clamp(Number(e.target.value) / 100, 0.05, 1);
+    lastInput = T;
   });
+  sliderEl.addEventListener('pointerdown', () => takeOver());
 
   addEventListener('keydown', (e) => {
     if (e.altKey || e.ctrlKey || e.metaKey) return;
@@ -323,7 +347,10 @@ export function runLive() {
   }, {passive: false});
 
   // ------------------------------------------------------------ frame
-  startTour();
+  if (reduce) {
+    AP.on = false;
+    lastInput = 0;
+  } else startTour();
   let last = performance.now();
   const perf = {n: 0, sum: 0, slow: 0, age: 0};
   const step = (dt) => {
@@ -378,7 +405,7 @@ export function runLive() {
       };
       ring = {t: T, x: cursor.x, y: cursor.y};
     } else {
-      if (T - lastInput > IDLE) startTour();
+      if (!reduce && T - lastInput > IDLE) startTour();
       cursor = null;
     }
 
@@ -393,9 +420,10 @@ export function runLive() {
       tz: v.tz,
       az: v.az + off.az,
       el: clamp(v.el + off.el, -6, 80),
-      d: v.d * off.k,
+      // portrait owns a narrower pane, so the same part has to sit further back to read at the same size
+      d: v.d * (mode === 'port' ? clamp(2.3 * 0.462 / (W / H), 1.15, 3.2) : 1) * off.k,
       sx: 0,
-      sy: -72,
+      sy: syBase,
     };
     const k = 1 - Math.exp(-dt / (AP.on ? 0.55 : 0.42));
     cam.az += wrap(tgt.az - cam.az) * k;
@@ -435,14 +463,18 @@ export function runLive() {
       callouts: calls,
       project: st.project,
       cursor,
+      sliderValue: s.load * 100,
     });
-    const rk = Math.max(0, 1 - (T - ring.t) / 0.5);
-    if (!AP.on) ui.cursor.classList.remove('on');
-    ui.ringK = rk;
 
-    if (chip.classList.contains('on') !== AP.on || !chip.firstChild) {
-      chip.classList.toggle('on', AP.on);
-      chip.innerHTML = AP.on ? '<i></i>AUTO TOUR · CLICK ANYWHERE TO TAKE OVER' : '▶ RESUME TOUR';
+    if (chipLabel !== AP.on || chipMode !== mode) {
+      chipLabel = AP.on;
+      chipMode = mode;
+      ui.chip.classList.toggle('on', AP.on);
+      ui.chip.setAttribute('aria-pressed', AP.on ? 'true' : 'false');
+      ui.chip.setAttribute('aria-label', AP.on ? 'Pause the auto tour and take control' : 'Resume the auto tour');
+      ui.chip.innerHTML = AP.on
+        ? `<i></i>Auto tour · ${mode === 'port' ? 'tap' : 'click'} anywhere to take over`
+        : '<span aria-hidden="true">▶</span> Resume tour';
     }
     if (!window.SIM_SHOWN) {
       window.SIM_SHOWN = true;

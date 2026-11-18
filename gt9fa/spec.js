@@ -63,7 +63,7 @@ export function simulate(load) {
     T4,
     P1,
     P2: P1 * pr,
-    P3: P1 * pr * 0.97,
+    P3: P1 * pr * 0.965, // 3.5 % combustor pressure loss, the value GE quotes in the 9FA data (PLOS 2025, Table 3)
     P4: P1 * 1.06,
     mAir,
     fuel,

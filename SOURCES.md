@@ -84,3 +84,44 @@ node -e "import('./gt9fa/spec.js').then(m => console.log(m.simulate(1)))"
 
 Every panel, the chart and the flame size read this one object, so a number cannot drift between the
 gauge, the plot and the 3D.
+
+## 6. Cross-check against the literature
+
+Two peer-reviewed papers study exactly this machine (GE PG9351FA). Both were used to check the page's
+design point; neither is used to invent part-load numbers.
+
+- Chi J, Wang C, He Y, Gou C, Wang Z (2025). *Solving characteristic parameters of heavy-duty gas
+  turbines using parameter estimation method.* PLOS ONE 20(10): e0333661.
+  <https://doi.org/10.1371/journal.pone.0333661> — open access. Its Table 3 carries a
+  **"GE Company Data"** column beside the authors' own assumptions.
+- Li J, Ma C, Wu S, Li J (2023). *Thermal Calculation and Analysis of 9FA Type Gas Turbine Basic
+  Conditions.* J. Phys.: Conf. Ser. 2433 012029. <https://doi.org/10.1088/1742-6596/2433/1/012029> —
+  open access; models the same PG9351FA compressor / combustor / turbine and derives cooling-air flows,
+  equivalent turbine front temperature and compressor efficiency.
+
+| Parameter (base load) | This page | PLOS 2025 "GE Company Data" | PLOS 2025 authors' model | Agreement |
+|---|---|---|---|---|
+| Inlet air mass flow | 624 kg/s | 623.7 kg/s | 630 kg/s | 0.05 % against GE data |
+| Pressure ratio | 15.4 | 15.4 | 15.4 | exact |
+| Power at terminals | 255.6 MW | 255.6 MW | 256 MW | exact |
+| Thermal efficiency | 36.9 % | 36.9 % | 35.9 % | exact against GE data |
+| Combustor pressure loss | 3.5 % | 3.5 % | 3.5 % | exact — the model used 3 % before this check and was corrected |
+| Compressor isentropic efficiency | 88 % | — | 88 % | same assumption |
+| Turbine isentropic efficiency | derived from the work balance | — | 87 % | not directly comparable |
+| Exhaust temperature | 609.6 °C | — | 601 °C | 1.4 % against their model |
+| Exhaust mass flow | 637.9 kg/s | — | 644 kg/s | 1.0 % against their model |
+| Firing (combustor exit) temperature | 1,315 °C | — | 1,400 °C input labelled "combustion temperature" | **not comparable**: theirs is an adiabatic-flame-level input, ours is a combustor-exit figure. GE publishes no single TTRF for the 9FA. |
+
+Two observations worth recording rather than smoothing over:
+
+1. The same paper's Table 1 ("design condition performance of the PG9351FA") lists pressure ratio
+   **16.576**, mass flow **647.96 kg/s** and exhaust temperature **680.48 K**, which contradicts its own
+   Table 3 and the GE product sheet. The page follows the product sheet (15.4 / 623.7 kg/s and 609 °C),
+   which is the set Table 3 also calls GE data. Some plant documents quote 17.0:1 for later 9FA marks;
+   this page states 15.4:1 because that is the sheet for this model designation.
+2. **Part load is not verified.** No measured part-load table was found in the accessible literature; the
+   PLOS paper reports off-design experiments only at corrected speeds 0.81–1.062 with IGV variation and
+   publishes them as figures, not values. The curve behind the LOAD slider is therefore a scenario, and
+   the page now says so under the slider. If measured load points are supplied, the curve should be
+   replaced by them, not re-fitted.
+

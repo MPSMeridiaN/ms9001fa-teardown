@@ -120,6 +120,7 @@ const CSS = `
 .range::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:14px;height:14px;margin-top:-6px;
   background:#fff;border:2px solid var(--ink);border-radius:0}
 .range::-moz-range-thumb{width:12px;height:12px;background:#fff;border:2px solid var(--ink);border-radius:0}
+.load-note{margin-top:4px;font:500 9.5px/1.35 Inter,sans-serif;color:var(--faint);letter-spacing:.01em}
 .range-ends{display:flex;justify-content:space-between;font:500 9.5px/1 'JetBrains Mono',monospace;
   color:var(--faint);text-transform:uppercase;letter-spacing:.04em;margin-top:-2px}
 .gen{display:flex;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:1px solid var(--line2);
@@ -339,6 +340,7 @@ export function createConsole(app) {
   slider.value = '100';
   slider.setAttribute('aria-label', 'Fuel demand, percent of base load');
   const ends = add('div', 'range-ends', gLoad, '<span>5</span><span>50</span><span>base</span>');
+  add('div', 'load-note', gLoad, 'Part load is a scenario curve. Only the base-load point is published data - see SOURCES.md.');
   add('div', 'gen', gLoad, '<span>Generator</span><b id="v-gw2" class="tnum">–</b>');
 
   // ------------------------------------------------------------ chart
